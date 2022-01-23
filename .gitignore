@@ -1,0 +1,12 @@
+# ignore IDE and virtual envs
+venv
+.idea
+.vscode
+
+# ignore python cache
+*.py[cod]
+__pycache__
+.cache
+
+# ignore temporary folder for downloads
+tmp
