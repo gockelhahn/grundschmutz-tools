@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Liste von Anforderungstypen",
+  "description": "Alle möglichen Typen einer Anforderung",
+  "type": "array",
+  "items": {
+    "description": "Anforderungstyp",
+    "type": "object",
+    "properties": {
+      "id": {
+        "description": "Eindeutige Kennung",
+        "type": "integer",
+        "minimum": 0
+      },
+      "name": {
+        "description": "Name des Anforderungstyps",
+        "type": "string"
+      }
+    },
+    "required": ["id", "name"]
+  },
+  "uniqueItems": true
+}

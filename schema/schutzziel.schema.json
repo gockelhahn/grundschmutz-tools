@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Liste von Schutzzielen",
+  "description": "Grundwerte der Informationssicherheit",
+  "type": "array",
+  "items": {
+    "description": "Schutzziel",
+    "type": "object",
+    "properties": {
+      "id": {
+        "description": "Eindeutige Kennung",
+        "type": "integer",
+        "minimum": 0
+      },
+      "name": {
+        "description": "Name des Schutzziels",
+        "type": "string"
+      },
+      "label": {
+        "description": "Beschreibung des Schutzziels",
+        "type": "string"
+      }
+    },
+    "required": ["id", "name", "label"]
+  },
+  "uniqueItems": true
+}
