@@ -1,0 +1,5 @@
+jsonschema
+lxml
+openpyxl
+pandas
+requests

@@ -1,0 +1,5 @@
+[
+  {"id": 0, "name": "C" ,"label": "Vertraulichkeit"},
+  {"id": 1, "name": "I" ,"label": "Integrität"},
+  {"id": 2, "name": "A" ,"label": "Verfügbarkeit"}
+]
