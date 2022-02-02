@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Liste von elementaren Gefährdungen",
+  "description": "Alle Gefährdungen, die im IT-Betrieb auftreten können",
+  "type": "array",
+  "items": {
+    "description": "Elementare Gefährdung",
+    "type": "object",
+    "properties": {
+      "id": {
+        "description": "Eindeutige Kennung",
+        "type": "integer",
+        "minimum": 0
+      },
+      "name": {
+        "description": "Name der Gefährdung",
+        "type": "string"
+      },
+      "label": {
+        "description": "Beschreibung des Gefährdung",
+        "type": "string"
+      }
+    },
+    "required": ["id", "name", "label"]
+  },
+  "uniqueItems": true
+}

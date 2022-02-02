@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Liste von Bausteinen",
+  "description": "Alle Bausteine im Kompendium",
+  "type": "array",
+  "items": {
+    "description": "Baustein",
+    "type": "object",
+    "properties": {
+      "id": {
+        "description": "Eindeutige Kennung",
+        "type": "integer",
+        "minimum": 0
+      },
+      "name": {
+        "description": "Name des Bausteins",
+        "type": "string"
+      },
+      "label": {
+        "description": "Beschreibung des Bausteins",
+        "type": "string"
+      },
+      "category": {
+        "description": "ID der Bausteinkategorie",
+        "type": "integer",
+        "minimum": 0
+      },
+      "rollen": {
+        "description": "Liste von IDs der Zuständigkeiten (Rollen)",
+        "type": "array",
+        "items": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "uniqueItems": true
+      }
+    },
+    "required": ["id", "name", "label", "category", "rollen"]
+  },
+  "uniqueItems": true
+}

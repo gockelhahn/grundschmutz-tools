@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Gefährdungen pro Anforderung",
+  "description": "Strukturierte darstellung der Kreuzreferenztabelle",
+  "type": "array",
+  "items": {
+    "description": "Anforderung",
+    "type": "object",
+    "properties": {
+      "id": {
+        "description": "Eindeutige Kennung",
+        "type": "integer",
+        "minimum": 0
+      },
+      "anforderung": {
+        "description": "ID der Anforderung",
+        "type": "integer",
+        "minimum": 0
+      },
+      "gefaehrdung": {
+        "description": "ID der Gefährdung",
+        "type": "integer",
+        "minimum": 0
+      },
+      "schutzziele": {
+        "description": "Liste von IDs der beeinträchtigten Schutzziele",
+        "type": "array",
+        "items": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "uniqueItems": true
+      }
+    },
+    "required": ["id", "anforderung", "gefaehrdung", "schutzziele"]
+  },
+  "uniqueItems": true
+}

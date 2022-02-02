@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Liste von personenbezogenen Rollen",
+  "description": "Rollen die z.B. für Zuständigkeiten benutzt werden",
+  "type": "array",
+  "items": {
+    "description": "Rolle",
+    "type": "object",
+    "properties": {
+      "id": {
+        "description": "Eindeutige Kennung",
+        "type": "integer",
+        "minimum": 0
+      },
+      "name": {
+        "description": "Name der Rolle",
+        "type": "string"
+      }
+    },
+    "required": ["id", "name"]
+  },
+  "uniqueItems": true
+}

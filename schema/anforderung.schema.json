@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Liste von Anforderungen",
+  "description": "Alle Anforderungen aller Bausteine",
+  "type": "array",
+  "items": {
+    "description": "Anforderung",
+    "type": "object",
+    "properties": {
+      "id": {
+        "description": "Eindeutige Kennung",
+        "type": "integer",
+        "minimum": 0
+      },
+      "name": {
+        "description": "Name der Anforderung",
+        "type": "string"
+      },
+      "label": {
+        "description": "Beschreibung der Anforderung",
+        "type": "string"
+      },
+      "type": {
+        "description": "ID des Anforderungstyps",
+        "type": "integer",
+        "minimum": 0
+      },
+      "baustein": {
+        "description": "ID des Bausteins",
+        "type": "integer",
+        "minimum": 0
+      },
+      "rollen": {
+        "description": "Liste von IDs der Zuständigkeiten (Rollen)",
+        "type": "array",
+        "items": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "uniqueItems": true
+      }
+    },
+    "required": ["id", "name", "label", "type", "baustein", "rollen"]
+  },
+  "uniqueItems": true
+}

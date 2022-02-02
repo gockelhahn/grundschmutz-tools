@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Liste von Bausteinkategorien",
+  "description": "Kategorien in welche alle Bausteine eingeteilt sind",
+  "type": "array",
+  "items": {
+    "description": "Bausteinkategorie",
+    "type": "object",
+    "properties": {
+      "id": {
+        "description": "Eindeutige Kennung",
+        "type": "integer",
+        "minimum": 0
+      },
+      "name": {
+        "description": "Name des Schutzziels",
+        "type": "string"
+      },
+      "label": {
+        "description": "Beschreibung der Bausteinkategorie",
+        "type": "string"
+      }
+    },
+    "required": ["id", "name", "label"]
+  },
+  "uniqueItems": true
+}
