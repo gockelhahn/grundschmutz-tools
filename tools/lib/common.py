@@ -1,4 +1,5 @@
 from io import StringIO
+import json
 from lxml import html
 from lxml.etree import ElementTree
 import requests
@@ -14,6 +15,26 @@ def download_binary(url: str, dest: str) -> None:
 
 def clean_gap(text: str) -> str:
     return text.replace(u'\xa0', ' ')
+
+
+def get_from_json(filename: str, attr: str, value: str) -> [int, ValueError]:
+    with open(filename, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    if isinstance(data, list):
+        for elem in data:
+            if attr in elem and elem[attr] == value:
+                return elem['id']
+
+    raise ValueError('No item found with "{}"@"{}" inside {}'
+                     .format(value, attr, filename))
+
+
+def save_json(filename: str, elements: list) -> None:
+    with open(filename, 'w') as f:
+        f.write('[\n  %s\n]\n' % ',\n  '.join(
+            json.dumps(obj, ensure_ascii=False, separators=(', ', ': '))
+                for obj in elements))
 
 
 def get_html(text: str) -> ElementTree:

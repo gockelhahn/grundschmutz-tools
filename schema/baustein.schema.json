@@ -20,22 +20,18 @@
         "description": "Beschreibung des Bausteins",
         "type": "string"
       },
-      "category": {
+      "bausteinkategorie": {
         "description": "ID der Bausteinkategorie",
         "type": "integer",
         "minimum": 0
       },
-      "rollen": {
-        "description": "Liste von IDs der Zuständigkeiten (Rollen)",
-        "type": "array",
-        "items": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "uniqueItems": true
+      "rolle": {
+        "description": "Bausteinverantwortlicher (Rolle)",
+        "type": "integer",
+        "minimum": 0
       }
     },
-    "required": ["id", "name", "label", "category", "rollen"]
+    "required": ["id", "name", "label", "bausteinkategorie", "rolle"]
   },
   "uniqueItems": true
 }

@@ -20,7 +20,7 @@
         "description": "Beschreibung der Anforderung",
         "type": "string"
       },
-      "type": {
+      "anforderungstyp": {
         "description": "ID des Anforderungstyps",
         "type": "integer",
         "minimum": 0
@@ -40,7 +40,7 @@
         "uniqueItems": true
       }
     },
-    "required": ["id", "name", "label", "type", "baustein", "rollen"]
+    "required": ["id", "name", "label", "anforderungstyp", "baustein", "rollen"]
   },
   "uniqueItems": true
 }
