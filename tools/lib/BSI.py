@@ -1,5 +1,7 @@
 import glob
 import os
+import sys
+
 import pandas
 import subprocess
 from typing import Optional
@@ -16,6 +18,13 @@ class BSI(object):
         DOWNLOAD_BASE +
         '/Kompendium_Einzel_PDFs_2021/Zip_Datei_Edition_2021.zip'
         '?__blob=publicationFile&v=6')
+    # overview URL with Bausteinkategorien
+    OVERVIEW_URL = (
+        'https://www.bsi.bund.de/DE/Themen/Unternehmen-und-Organisationen'
+        '/Standards-und-Zertifizierung/IT-Grundschutz'
+        '/IT-Grundschutz-Kompendium/IT-Grundschutz-Bausteine'
+        '/2021/Bausteine_Download_Edition_2021.html'
+    )
     # URL for "Elementare Gefährdungen"
     GEFAEHRDUNGEN_URL = (
         DOWNLOAD_BASE +
@@ -30,8 +39,10 @@ class BSI(object):
     EXCEL_SHEET_NAME = 'KRT_{}.xlsx'
 
     def __init__(self, tmpdir: Optional[str] = None) -> None:
-        # all Gefahren
-        self.gefahr = {}
+        # all Bausteinkategorien
+        self.bausteinkategorien = {}
+        # all Gefaehrdungen
+        self.gefaehrdungen = {}
         # all Bausteine including their Anforderungen
         self.baustein = {}
         # KRT (list of dataframes)
@@ -40,10 +51,13 @@ class BSI(object):
         # tmp dir for downloads and conversions
         self.tmpdir = tmpdir
         if tmpdir is None:
-            self.tmpdir = os.path.realpath(
-                os.path.join(os.path.dirname(__file__), '..', 'tmp'))
+            self.tmpdir = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), '..', '..', 'tmp'))
         os.makedirs(self.tmpdir, exist_ok=True)
 
+        # overview html
+        self.overview_html = os.path.join(
+            self.tmpdir, 'Bausteine_Download_Edition_2021.html')
         # kompendium zip
         self.kompendium_zip = os.path.join(
             self.tmpdir, 'Zip_Datei_Edition_2021.zip')
@@ -57,6 +71,8 @@ class BSI(object):
         os.makedirs(self.baustein_dir, exist_ok=True)
 
     def _download(self) -> None:
+        if not os.path.exists(self.overview_html):
+            download_binary(BSI.OVERVIEW_URL, self.overview_html)
         if not os.path.exists(self.kompendium_zip):
             download_binary(BSI.KOMPENDIUM_URL, self.kompendium_zip)
         if not os.path.exists(self.gefaerdungen_pdf):
@@ -99,6 +115,54 @@ class BSI(object):
                                      # skip NaN values
                                      na_values=[],
                                      keep_default_na=False)
+
+    def get_bausteinkategorien(self) -> dict:
+        if len(self.bausteinkategorien) > 0:
+            return self.bausteinkategorien
+
+        # parse Bausteinkategorien
+        # get html
+        html = get_html_from_file(self.overview_html)
+
+        for kat_link in html.xpath(
+                '//div[contains(@class, "l-content-wrapper")]//h2'):
+            # collect Bausteinkategorie attributes
+            kat_title = kat_link.text_content().strip()
+            kat_title_list = kat_title.split(': ')
+            kat_name = kat_title_list[0]
+            kat_label = kat_title_list[1]
+
+            self.bausteinkategorien[
+                clean_gap(kat_name)] = clean_gap(kat_label)
+
+        return self.bausteinkategorien
+
+    def get_gefaehrdungen(self) -> dict:
+        if len(self.gefaehrdungen) > 0:
+            return self.gefaehrdungen
+
+        # parse Elementare_Gefaehrdungen toc
+        file_prefix = self.gefaerdungen_pdf.split('.pdf')[0]
+        # table of content
+        toc_path = '{}s.html'.format(file_prefix)
+        # get html
+        toc_html = get_html_from_file(toc_path)
+
+        for gef_link in toc_html.xpath('//a'):
+            if gef_link.text_content().startswith('G 0'):
+                # collect Gefaerdung attributes
+                gef_title = gef_link.text_content().strip()
+                gef_title_list = gef_title.split()
+                gef_name = ' '.join(gef_title_list[:2])
+                gef_number = gef_name.split('.')[1]
+                gef_label = ' '.join(gef_title_list[2:])
+
+                self.gefaehrdungen[gef_number] = {
+                    'name': clean_gap(gef_name),
+                    'label': clean_gap(gef_label)
+                }
+
+        return self.gefaehrdungen
 
     def get_bausteine_with_anforderungen(self) -> dict:
         if len(self.baustein) > 0:
@@ -181,16 +245,11 @@ class BSI(object):
         gefaehrdungen_anf = {}
         # fix errors within KRT, overseen by BSI
         for i, value in enumerate(all_gefaehrdungen):
-            if value.startswith('G0'):
-                newvalue = value.replace('G0', 'G 0')
-                value = newvalue
-            if value.startswith('G.0'):
-                newvalue = value.replace('G.0', 'G 0.')
-                value = newvalue
-            if len(value) == 5:
-                newvalue = value.replace('.', '.0')
-                value = newvalue
+            newvalue = value
+            newvalue = newvalue.replace('G0', 'G 0')
+            newvalue = newvalue.replace('G.0', 'G 0.')
+            newvalue = newvalue.replace('G 0.0', 'G 0.')
             if checked[i].lower().strip() == 'x':
-                gefaehrdungen_anf[value] = values[2].upper().strip()
+                gefaehrdungen_anf[newvalue] = values[2].upper().strip()
 
         return gefaehrdungen_anf

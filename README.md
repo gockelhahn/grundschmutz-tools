@@ -1,6 +1,16 @@
 # grundschmutz-tools
 
-Dieses Repository enthält Scripte, welche die Daten des [IT-Grundschutz-Kompendiums](https://www.bsi.bund.de/DE/Themen/Unternehmen-und-Organisationen/Standards-und-Zertifizierung/IT-Grundschutz/IT-Grundschutz-Kompendium/it-grundschutz-kompendium_node.html) des [Bundesamts für Sicherheit in der Informationstechnik (BSI)](https://www.bsi.bund.de/) parsen und in JSON umwandeln.
+Dieses Repository enthält ein Script, welches die Daten des [IT-Grundschutz-Kompendiums](https://www.bsi.bund.de/DE/Themen/Unternehmen-und-Organisationen/Standards-und-Zertifizierung/IT-Grundschutz/IT-Grundschutz-Kompendium/it-grundschutz-kompendium_node.html) des [Bundesamts für Sicherheit in der Informationstechnik (BSI)](https://www.bsi.bund.de/) herunterlädt, konvertiert, parst und im Anschluss als JSON bereitstellt.
+
+## Howto
+
+Das Script funktioniert unter Linux und benötigt zusätzlich das Tool/Package ```pdftohtml```.
+Vor dem Ausführen müssen die Python-Abhängigkeiten installiert werden:
+> pip install -r [tools/requirements.txt](tools/requirements.txt)
+
+> python3 [```tools/download_and_convert.py```](tools/download_and_convert.py)
+
+Die Daten werden im [data](data/2021) Ordner abgelegt.
 
 ## Intention
 

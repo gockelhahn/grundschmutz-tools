@@ -1,16 +1,20 @@
 #!/usr/bin/env python
 # download BSI IT-Grundschutz-Kompendium and
 # convert it into structural json based machine-readable data
-
+import json
 import os
+from pkg_resources import parse_version
 import re
 
-from pkg_resources import parse_version
+from jsonschema import validate
 
 from lib.common import get_from_json, save_json
 from lib.BSI import BSI
 
-data_dir_2021 = os.path.join(os.path.curdir, '..', 'data', '2021')
+schema_dir = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', 'schema'))
+data_dir_2021 = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', 'data', '2021'))
 j_anforderung = os.path.join(data_dir_2021, 'anforderung.json')
 j_anf_gef = os.path.join(data_dir_2021, 'anforderung_gefaehrdung.json')
 j_anforderungstyp = os.path.join(data_dir_2021, 'anforderungstyp.json')
@@ -42,6 +46,10 @@ def main() -> None:
     # download and convert
     bsi.setup()
 
+    # get Gefährdungen
+    bsigefaerdungen = bsi.get_gefaehrdungen()
+    # get Bausteinkategorien
+    bsibausteinkategorien = bsi.get_bausteinkategorien()
     # get Bausteine and Anforderungen
     bsielements = bsi.get_bausteine_with_anforderungen()
 
@@ -61,11 +69,10 @@ def main() -> None:
     save_json(j_gefaehrdung, d_gefaehrdung)
     save_json(j_rolle, d_rolle)
 
-    # TODO: get all Bausteinkategorien with labels
-
     # loop through Bausteinkategorien (like APP/CON/...)
     for kat in sorted(bsielements):
-        kat_data = {'name': kat, 'label': kat}
+        kat_data = {'name': kat,
+                    'label': bsibausteinkategorien[kat]}
         kat_id = get_or_create(j_bausteinkat, d_bausteinkat, 'name', kat_data)
         for bauv in sorted(parse_version(x) for x in bsielements[kat]):
             rolle_data = {'name': bsielements[kat][str(bauv)]['rolle']}
@@ -131,7 +138,15 @@ def main() -> None:
     # we dont need the id before, so only save it once!
     save_json(j_anforderung, d_anforderung)
 
-    # TODO: get all Gefährdungen
+    # get Gefährdungen and save them
+    for gefv in sorted(parse_version(x) for x in bsigefaerdungen):
+        d_gefaehrdung.append({
+            'id': len(d_gefaehrdung),
+            'name': bsigefaerdungen[str(gefv)]['name'],
+            'label': bsigefaerdungen[str(gefv)]['label'],
+        })
+
+    save_json(j_gefaehrdung, d_gefaehrdung)
 
     # loop again over all Anforderungen and get a list of Gefährdungen
     for anf in d_anforderung:
@@ -144,6 +159,7 @@ def main() -> None:
                 schutzziel_id = get_from_json(j_schutzziel, 'name', schutzziel)
                 s_ids.append(schutzziel_id)
             d_anf_gef.append({
+                'id': len(d_anf_gef),
                 'anforderung': anf['id'],
                 'gefaehrdung': g_id,
                 'schutzziele': s_ids
@@ -152,5 +168,27 @@ def main() -> None:
     save_json(j_anf_gef, d_anf_gef)
 
 
+def validate_json():
+    for i in [j_anforderung,
+              j_anf_gef,
+              j_anforderungstyp,
+              j_baustein,
+              j_bausteinkat,
+              j_gefaehrdung,
+              j_rolle,
+              j_schutzziel]:
+        schema = os.path.join(
+            schema_dir, os.path.basename(i).replace('.json', '.schema.json'))
+
+        with open(i, 'r', encoding='utf-8') as f:
+            data = f.read()
+
+        with open(schema, 'r', encoding='utf-8') as f:
+            sdata = f.read()
+
+        validate(json.loads(data), json.loads(sdata))
+
+
 if __name__ == '__main__':
     main()
+    validate_json()
