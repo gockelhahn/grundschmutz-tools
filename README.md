@@ -10,7 +10,7 @@ Vor dem Ausführen müssen die Python-Abhängigkeiten installiert werden:
 
 > python3 [```tools/download_and_convert.py```](tools/download_and_convert.py)
 
-Die Daten werden im [data](data/2021) Ordner abgelegt.
+Die Daten werden im "data" Ordner abgelegt.
 
 ## Intention
 
