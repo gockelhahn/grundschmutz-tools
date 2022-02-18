@@ -1,6 +1,5 @@
 import glob
 import os
-import sys
 
 import pandas
 import subprocess
@@ -11,6 +10,7 @@ from .common import clean_gap, download_binary, get_html_from_file
 
 
 class BSI(object):
+    VERSION = '2021'
     DOWNLOAD_BASE = (
         'https://www.bsi.bund.de/SharedDocs/Downloads/DE/BSI/Grundschutz')
     # ZIP file with separate PDFs (one PDF per Baustein)
@@ -52,51 +52,63 @@ class BSI(object):
         self.tmpdir = tmpdir
         if tmpdir is None:
             self.tmpdir = os.path.abspath(
-                os.path.join(os.path.dirname(__file__), '..', '..', 'tmp'))
+                os.path.join(
+                    os.path.dirname(__file__),
+                    '..', '..', 'tmp', self.VERSION))
         os.makedirs(self.tmpdir, exist_ok=True)
 
         # overview html
         self.overview_html = os.path.join(
-            self.tmpdir, 'Bausteine_Download_Edition_2021.html')
+            self.tmpdir, 'overview.html')
         # kompendium zip
         self.kompendium_zip = os.path.join(
-            self.tmpdir, 'Zip_Datei_Edition_2021.zip')
+            self.tmpdir, 'single_bausteine_pdf.zip')
         # gefaehrdungen pdf
         self.gefaerdungen_pdf = os.path.join(
-            self.tmpdir, 'Elementare_Gefaehrdungen.pdf')
+            self.tmpdir, 'elementare_gefaehrdungen.pdf')
         # kreuzreferenztabelle in excel format
-        self.krt_xlsx = os.path.join(self.tmpdir, 'krt2021_Excel.xlsx')
+        self.krt_xlsx = os.path.join(self.tmpdir, 'kreuzreferenztabelle.xlsx')
         # tmp dir for baustein pdf and converted html files
-        self.baustein_dir = os.path.join(self.tmpdir, 'bausteine')
-        os.makedirs(self.baustein_dir, exist_ok=True)
+        self.baustein_dir_extract = os.path.join(self.tmpdir, 'bausteine')
+        os.makedirs(self.baustein_dir_extract, exist_ok=True)
+        # folder of bausteine
+        self.baustein_dir = self.baustein_dir_extract
 
     def _download(self) -> None:
         if not os.path.exists(self.overview_html):
-            download_binary(BSI.OVERVIEW_URL, self.overview_html)
+            download_binary(self.OVERVIEW_URL, self.overview_html)
         if not os.path.exists(self.kompendium_zip):
-            download_binary(BSI.KOMPENDIUM_URL, self.kompendium_zip)
+            download_binary(self.KOMPENDIUM_URL, self.kompendium_zip)
         if not os.path.exists(self.gefaerdungen_pdf):
-            download_binary(BSI.GEFAEHRDUNGEN_URL, self.gefaerdungen_pdf)
+            download_binary(self.GEFAEHRDUNGEN_URL, self.gefaerdungen_pdf)
         if not os.path.exists(self.krt_xlsx):
-            download_binary(BSI.KRT_URL, self.krt_xlsx)
+            download_binary(self.KRT_URL, self.krt_xlsx)
 
     def _prepare(self) -> None:
         # unzip
         with zipfile.ZipFile(self.kompendium_zip, 'r') as zf:
-            zf.extractall(self.baustein_dir)
+            zf.extractall(self.baustein_dir_extract)
 
         # convert pdf to html with tool "pdf2html"
         pdfs = glob.glob(os.path.join(self.baustein_dir, '*.pdf'))
         pdfs.append(self.gefaerdungen_pdf)
         for pdf in pdfs:
+            # delete old html files from earlier runs
+            htmls = glob.glob(
+                os.path.join(os.path.dirname(pdf),
+                             '{}*.html'.format(os.path.splitext(pdf)[0])))
+            for item in htmls:
+                os.remove(item)
+
             command = [
-                '/usr/bin/pdftohtml',
+                'pdftohtml',
                 # single document
                 '-s',
                 # ingore images
                 '-i',
                 pdf
             ]
+
             p = subprocess.Popen(command)
             p.wait()
 
@@ -128,6 +140,9 @@ class BSI(object):
                 '//div[contains(@class, "l-content-wrapper")]//h2'):
             # collect Bausteinkategorie attributes
             kat_title = kat_link.text_content().strip()
+            # skip (needed for BSI 2022)
+            if kat_title == 'Ähnliche Themen':
+                continue
             kat_title_list = kat_title.split(': ')
             kat_name = kat_title_list[0]
             kat_label = kat_title_list[1]
@@ -169,7 +184,7 @@ class BSI(object):
             return self.baustein
 
         # loop through all Baustein PDFs
-        for path in glob.glob('{}/*.pdf'.format(self.baustein_dir)):
+        for path in glob.glob(os.path.join(self.baustein_dir, '*.pdf')):
             file_prefix = path.split('.pdf')[0]
             # table of content
             toc_path = '{}s.html'.format(file_prefix)
@@ -205,15 +220,39 @@ class BSI(object):
                                 'label': clean_gap(anf_label)}
 
                     # get responsible person
+                    # yes we need the NBSP character here
                     rolle = content_html.xpath(
-                        # NBSP character is needed and stripped out later
-                        '//p[text()="Grundsätzlich zuständig"]'
-                        '/following::p/text()')
-                    # if not found, sometimes there is a different name
-                    if len(rolle) == 0:
+                        '//p[starts-with(text(), '
+                        '"Grundsätzlich zuständig")]/text()')
+                    # if found
+                    if len(rolle) > 0:
+                        # sometimes the value for that key is in the same <p>
+                        # split key and value
+                        rolle = ' '.join(rolle[0].split(
+                            'Grundsätzlich zuständig')[1:]).strip()
+                        # if value not found, we need to get the next <p>
+                        if len(rolle) == 0:
+                            rolle = content_html.xpath(
+                                '//p[starts-with(text(), '
+                                '"Grundsätzlich zuständig")]'
+                                '/following::p/text()')[0].strip()
+                    # sometimes there is a different name for responsible
+                    else:
                         rolle = content_html.xpath(
-                            '//p[text()="Bausteinverantwortlicher"]'
-                            '/following::p/text()')
+                            '//p[starts-with(text(), '
+                            '"Bausteinverantwortlicher")]/text()')
+                        # do the same as above
+                        rolle = ' '.join(rolle[0].split(
+                            'Bausteinverantwortlicher')[1:]).strip()
+                        if len(rolle) == 0:
+                            rolle = content_html.xpath(
+                                '//p[starts-with(text(), '
+                                '"Bausteinverantwortlicher")]'
+                                '/following::p/text()')[0].strip()
+
+                    # fix rolle BSI2022
+                    if rolle == 'OT-Betrieb':
+                        rolle = 'OT-Betrieb (Operational Technology, OT)'
 
                     if bau_cat not in self.baustein:
                         self.baustein[bau_cat] = {}
@@ -221,7 +260,7 @@ class BSI(object):
                     self.baustein[bau_cat][bau_number] = {
                         'name': clean_gap(bau_name),
                         'label': clean_gap(bau_label),
-                        'rolle': clean_gap(rolle[0]),
+                        'rolle': clean_gap(rolle),
                         'anforderungen': anforderungen}
 
         return self.baustein
@@ -234,6 +273,17 @@ class BSI(object):
             sheet_name = 'INF.2_'
         if anf_name == 'ORP.1.A9':
             anf_name = 'ORP.1.A09'
+        # in BSI 2022, the Anforderung "APP.4.3.A24" is missing in KRT
+        if self.VERSION == '2022' and anf_name == 'APP.4.3.A24':
+            return {'G 0.14': 'CIA',
+                    'G 0.15': 'CIA',
+                    'G 0.22': 'CIA',
+                    'G 0.19': 'CIA',
+                    'G 0.23': 'CIA',
+                    'G 0.39': 'CIA',
+                    'G 0.46': 'CIA'}
+        if anf_name == 'APP.4.4.A9':
+            anf_name = 'APP.4.4.A09'
 
         sheet = self.krt[self.EXCEL_SHEET_NAME.format(sheet_name)]
         all_gefaehrdungen = [x for x in sheet.columns[3:].values.tolist()
@@ -253,3 +303,32 @@ class BSI(object):
                 gefaehrdungen_anf[newvalue] = values[2].upper().strip()
 
         return gefaehrdungen_anf
+
+
+class BSI2022(BSI):
+    VERSION = '2022'
+    DOWNLOAD_BASE = (
+        'https://www.bsi.bund.de/SharedDocs/Downloads/DE/BSI/Grundschutz')
+    # ZIP file with separate PDFs (one PDF per Baustein)
+    KOMPENDIUM_URL = (
+        DOWNLOAD_BASE +
+        '/IT-GS-Kompendium_Einzel_PDFs_2022/Zip_Datei_Edition_2022.zip'
+        '?__blob=publicationFile&v=3')
+    # overview URL with Bausteinkategorien
+    OVERVIEW_URL = (
+        'https://www.bsi.bund.de/DE/Themen/Unternehmen-und-Organisationen'
+        '/Standards-und-Zertifizierung/IT-Grundschutz'
+        '/IT-Grundschutz-Kompendium/IT-Grundschutz-Bausteine'
+        '/Bausteine_Download_Edition_node.html'
+    )
+    # Kreuzreferenztabelle (xlsx)
+    KRT_URL = (
+        DOWNLOAD_BASE +
+        '/Kompendium/krt2022_Excel.xlsx'
+        '?__blob=publicationFile&v=3')
+
+    def __init__(self, tmpdir: Optional[str] = None) -> None:
+        super().__init__(tmpdir)
+
+        # folder of bausteine
+        self.baustein_dir = os.path.join(self.baustein_dir, 'Einzeln_PDF')

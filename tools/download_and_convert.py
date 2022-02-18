@@ -5,26 +5,16 @@ import json
 import os
 from pkg_resources import parse_version
 import re
+import shutil
 
 from jsonschema import validate
 
 from lib.common import get_from_json, save_json
-from lib.BSI import BSI
-
-schema_dir = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..', 'schema'))
-data_dir_2021 = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..', 'data', '2021'))
-j_anforderung = os.path.join(data_dir_2021, 'anforderung.json')
-j_anf_gef = os.path.join(data_dir_2021, 'anforderung_gefaehrdung.json')
-j_anforderungstyp = os.path.join(data_dir_2021, 'anforderungstyp.json')
-j_baustein = os.path.join(data_dir_2021, 'baustein.json')
-j_bausteinkat = os.path.join(data_dir_2021, 'bausteinkategorie.json')
-j_gefaehrdung = os.path.join(data_dir_2021, 'gefaehrdung.json')
-j_rolle = os.path.join(data_dir_2021, 'rolle.json')
-j_schutzziel = os.path.join(data_dir_2021, 'schutzziel.json')
+from lib.BSI import BSI, BSI2022
 
 
+# return ID if data (based on a key) is found in json file,
+# if not, add to the given list and return ID
 def get_or_create(jsonfile: str,
                   jsonlist: list,
                   by: str,
@@ -41,10 +31,30 @@ def get_or_create(jsonfile: str,
     return thisid
 
 
-def main() -> None:
-    bsi = BSI()
+def create(bsi: BSI) -> None:
     # download and convert
     bsi.setup()
+
+    schema_dir = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'schema'))
+    template_dir = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'template'))
+    data_dir = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'data', bsi.VERSION))
+    os.makedirs(data_dir, exist_ok=True)
+
+    j_anforderung = os.path.join(data_dir, 'anforderung.json')
+    j_anf_gef = os.path.join(data_dir, 'anforderung_gefaehrdung.json')
+    j_anforderungstyp = os.path.join(data_dir, 'anforderungstyp.json')
+    j_baustein = os.path.join(data_dir, 'baustein.json')
+    j_bausteinkat = os.path.join(data_dir, 'bausteinkategorie.json')
+    j_gefaehrdung = os.path.join(data_dir, 'gefaehrdung.json')
+    j_rolle = os.path.join(data_dir, 'rolle.json')
+    j_schutzziel = os.path.join(data_dir, 'schutzziel.json')
+
+    # copy over the static data
+    shutil.copy2(os.path.join(template_dir, 'anforderungstyp.json'), data_dir)
+    shutil.copy2(os.path.join(template_dir, 'schutzziel.json'), data_dir)
 
     # get Gefährdungen
     bsigefaerdungen = bsi.get_gefaehrdungen()
@@ -53,7 +63,7 @@ def main() -> None:
     # get Bausteine and Anforderungen
     bsielements = bsi.get_bausteine_with_anforderungen()
 
-    # define lists
+    # define empty lists
     d_anforderung = []
     d_anf_gef = []
     d_baustein = []
@@ -61,7 +71,7 @@ def main() -> None:
     d_gefaehrdung = []
     d_rolle = []
 
-    # save empty json files
+    # save those empty lists into json files
     save_json(j_anforderung, d_anforderung)
     save_json(j_anf_gef, d_anf_gef)
     save_json(j_baustein, d_baustein)
@@ -167,8 +177,6 @@ def main() -> None:
 
     save_json(j_anf_gef, d_anf_gef)
 
-
-def validate_json():
     for i in [j_anforderung,
               j_anf_gef,
               j_anforderungstyp,
@@ -189,6 +197,12 @@ def validate_json():
         validate(json.loads(data), json.loads(sdata))
 
 
+def main() -> None:
+    bsi2021 = BSI()
+    create(bsi2021)
+    bsi2022 = BSI2022()
+    create(bsi2022)
+
+
 if __name__ == '__main__':
     main()
-    validate_json()
