@@ -10,7 +10,7 @@ import shutil
 from jsonschema import validate
 
 from lib.common import get_from_json, save_json
-from lib.BSI import BSI, BSI2022
+from lib.BSI import BSI, BSI2020, BSI2022
 
 
 # return ID if data (based on a key) is found in json file,
@@ -198,6 +198,8 @@ def create(bsi: BSI) -> None:
 
 
 def main() -> None:
+    bsi2020 = BSI2020()
+    create(bsi2020)
     bsi2021 = BSI()
     create(bsi2021)
     bsi2022 = BSI2022()

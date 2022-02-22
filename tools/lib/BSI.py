@@ -1,26 +1,33 @@
 import glob
 import os
-
-import pandas
 import subprocess
 from typing import Optional
 import zipfile
 
-from .common import clean_gap, download_binary, get_html_from_file
+import pandas
+
+from .common import (
+    clean_gap, download_binary, get_dataframe_from_csv, get_html_from_file
+)
 
 
 class BSI(object):
     VERSION = '2021'
+    BSI_DOMAIN = 'https://www.bsi.bund.de'
     DOWNLOAD_BASE = (
-        'https://www.bsi.bund.de/SharedDocs/Downloads/DE/BSI/Grundschutz')
+        BSI_DOMAIN +
+        '/SharedDocs/Downloads/DE/BSI/Grundschutz'
+    )
     # ZIP file with separate PDFs (one PDF per Baustein)
     KOMPENDIUM_URL = (
         DOWNLOAD_BASE +
         '/Kompendium_Einzel_PDFs_2021/Zip_Datei_Edition_2021.zip'
-        '?__blob=publicationFile&v=6')
+        '?__blob=publicationFile&v=6'
+    )
     # overview URL with Bausteinkategorien
     OVERVIEW_URL = (
-        'https://www.bsi.bund.de/DE/Themen/Unternehmen-und-Organisationen'
+        BSI_DOMAIN +
+        '/DE/Themen/Unternehmen-und-Organisationen'
         '/Standards-und-Zertifizierung/IT-Grundschutz'
         '/IT-Grundschutz-Kompendium/IT-Grundschutz-Bausteine'
         '/2021/Bausteine_Download_Edition_2021.html'
@@ -29,12 +36,14 @@ class BSI(object):
     GEFAEHRDUNGEN_URL = (
         DOWNLOAD_BASE +
         '/Kompendium/Elementare_Gefaehrdungen.pdf'
-        '?__blob=publicationFile&v=4')
+        '?__blob=publicationFile&v=4'
+    )
     # Kreuzreferenztabelle (xlsx)
     KRT_URL = (
         DOWNLOAD_BASE +
         '/Kompendium/krt2021_Excel.xlsx'
-        '?__blob=publicationFile&v=3')
+        '?__blob=publicationFile&v=3'
+    )
     # excel sheet name template
     EXCEL_SHEET_NAME = 'KRT_{}.xlsx'
 
@@ -68,6 +77,8 @@ class BSI(object):
             self.tmpdir, 'elementare_gefaehrdungen.pdf')
         # kreuzreferenztabelle in excel format
         self.krt_xlsx = os.path.join(self.tmpdir, 'kreuzreferenztabelle.xlsx')
+        # kreuzreferenztabelle in csv format
+        self.krt_csv = None
         # tmp dir for baustein pdf and converted html files
         self.baustein_dir_extract = os.path.join(self.tmpdir, 'bausteine')
         os.makedirs(self.baustein_dir_extract, exist_ok=True)
@@ -77,17 +88,21 @@ class BSI(object):
     def _download(self) -> None:
         if not os.path.exists(self.overview_html):
             download_binary(self.OVERVIEW_URL, self.overview_html)
-        if not os.path.exists(self.kompendium_zip):
-            download_binary(self.KOMPENDIUM_URL, self.kompendium_zip)
+        if self.KOMPENDIUM_URL:
+            if not os.path.exists(self.kompendium_zip):
+                download_binary(self.KOMPENDIUM_URL, self.kompendium_zip)
         if not os.path.exists(self.gefaerdungen_pdf):
             download_binary(self.GEFAEHRDUNGEN_URL, self.gefaerdungen_pdf)
-        if not os.path.exists(self.krt_xlsx):
+        if self.krt_xlsx and not os.path.exists(self.krt_xlsx):
             download_binary(self.KRT_URL, self.krt_xlsx)
+        if self.krt_csv and not os.path.exists(self.krt_csv):
+            download_binary(self.KRT_URL, self.krt_csv)
 
     def _prepare(self) -> None:
         # unzip
-        with zipfile.ZipFile(self.kompendium_zip, 'r') as zf:
-            zf.extractall(self.baustein_dir_extract)
+        if os.path.exists(self.kompendium_zip):
+            with zipfile.ZipFile(self.kompendium_zip, 'r') as zf:
+                zf.extractall(self.baustein_dir_extract)
 
         # convert pdf to html with tool "pdf2html"
         pdfs = glob.glob(os.path.join(self.baustein_dir, '*.pdf'))
@@ -288,6 +303,7 @@ class BSI(object):
         sheet = self.krt[self.EXCEL_SHEET_NAME.format(sheet_name)]
         all_gefaehrdungen = [x for x in sheet.columns[3:].values.tolist()
                              if x.startswith('G')]
+
         values = sheet[sheet[bau_name].apply(
             lambda x: x.strip() == anf_name)].values.tolist()[0]
         checked = values[3:]
@@ -307,16 +323,21 @@ class BSI(object):
 
 class BSI2022(BSI):
     VERSION = '2022'
+    BSI_DOMAIN = 'https://www.bsi.bund.de'
     DOWNLOAD_BASE = (
-        'https://www.bsi.bund.de/SharedDocs/Downloads/DE/BSI/Grundschutz')
+        BSI_DOMAIN +
+        '/SharedDocs/Downloads/DE/BSI/Grundschutz'
+    )
     # ZIP file with separate PDFs (one PDF per Baustein)
     KOMPENDIUM_URL = (
         DOWNLOAD_BASE +
         '/IT-GS-Kompendium_Einzel_PDFs_2022/Zip_Datei_Edition_2022.zip'
-        '?__blob=publicationFile&v=3')
+        '?__blob=publicationFile&v=3'
+    )
     # overview URL with Bausteinkategorien
     OVERVIEW_URL = (
-        'https://www.bsi.bund.de/DE/Themen/Unternehmen-und-Organisationen'
+        BSI_DOMAIN +
+        '/DE/Themen/Unternehmen-und-Organisationen'
         '/Standards-und-Zertifizierung/IT-Grundschutz'
         '/IT-Grundschutz-Kompendium/IT-Grundschutz-Bausteine'
         '/Bausteine_Download_Edition_node.html'
@@ -325,10 +346,102 @@ class BSI2022(BSI):
     KRT_URL = (
         DOWNLOAD_BASE +
         '/Kompendium/krt2022_Excel.xlsx'
-        '?__blob=publicationFile&v=3')
+        '?__blob=publicationFile&v=3'
+    )
 
     def __init__(self, tmpdir: Optional[str] = None) -> None:
         super().__init__(tmpdir)
 
         # folder of bausteine
         self.baustein_dir = os.path.join(self.baustein_dir, 'Einzeln_PDF')
+
+
+class BSI2020(BSI):
+    VERSION = '2020'
+    BSI_DOMAIN = 'https://www.bsi.bund.de'
+    DOWNLOAD_BASE = (
+        BSI_DOMAIN +
+        '/SharedDocs/Downloads/DE/BSI/Grundschutz')
+    # ZIP file with separate PDFs (one PDF per Baustein) [NOT EXISTING in 2020]
+    KOMPENDIUM_URL = None
+    # overview URL with Bausteinkategorien
+    OVERVIEW_URL = (
+        BSI_DOMAIN +
+        '/DE/Themen/Unternehmen-und-Organisationen'
+        '/Standards-und-Zertifizierung/IT-Grundschutz'
+        '/IT-Grundschutz-Kompendium/IT-Grundschutz-Bausteine'
+        '/2020/Bausteine_Download_Edition_2020.html'
+    )
+    # Kreuzreferenztabelle (xlsx)
+    KRT_URL = (
+        DOWNLOAD_BASE +
+        '/Kompendium/krt2020.csv'
+        '?__blob=publicationFile&v=1'
+    )
+
+    def __init__(self, tmpdir: Optional[str] = None) -> None:
+        super().__init__(tmpdir)
+
+        # kreuzreferenztabelle in excel format [broken, dont want to use]
+        self.krt_xlsx = None
+        # kreuzreferenztabelle in csv format
+        self.krt_csv = os.path.join(self.tmpdir, 'kreuzreferenztabelle.csv')
+
+    def setup(self) -> None:
+        # download Kompendium files
+        self._download()
+        # ... extract and convert to html
+        self._prepare()
+
+        # init KRT
+        self.krt = get_dataframe_from_csv(
+            self.krt_csv,
+            # add all non defined colums
+            prepend_text=';;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n',
+            # skip empty header line
+            skip_lines=1,
+            sep=';',
+        )
+
+    def _download(self) -> None:
+        super()._download()
+
+        html = get_html_from_file(self.overview_html)
+        for anf_link in html.xpath(
+                '//div[contains(@class, "l-content-wrapper")]//p/a'):
+            # collect Bausteinkategorie attributes
+            url = self.BSI_DOMAIN + anf_link.get('href')
+            label = anf_link.text_content().strip() + '.pdf'
+            dest = os.path.join(self.baustein_dir_extract, label)
+            if not os.path.exists(dest):
+                download_binary(url, dest)
+
+    def get_gefaehrdungen_by_anforderung(self, anf_name: str) -> dict:
+        # FIXME:
+        #  unfortunately we need to rely on the CSV instead XLSX,
+        #  because the xlsx is messed up a lot:
+        #  - missing Anforderungen
+        #  - missing Gefährdungen
+        #  - duplicated data
+        splitted = anf_name.split('.A')
+        bau_name = splitted[0]
+        number = splitted[1]
+        if len(number) == 1:
+            splitted[1] = '0{}'.format(number)
+        fixed_anf_name = '.A'.join(splitted)
+
+        baustein_values = self.krt[
+            self.krt['Unnamed: 0'].apply(
+                lambda x: x == bau_name)].values.tolist()
+
+        anforderung_values = self.krt[
+            self.krt['Unnamed: 0'].apply(
+                lambda x: x == fixed_anf_name)].values.tolist()
+
+        gefaehrdungen_anf = {}
+        for i, value in enumerate(anforderung_values[0]):
+            if value.lower().strip() == 'x':
+                fixed_gef = baustein_values[0][i].replace('G 0.0', 'G 0.')
+                gefaehrdungen_anf[fixed_gef] = anforderung_values[0][1]
+
+        return gefaehrdungen_anf

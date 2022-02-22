@@ -1,7 +1,10 @@
 from io import StringIO
 import json
+from typing import Optional
+
 from lxml import html
 from lxml.etree import ElementTree
+import pandas
 import requests
 
 
@@ -49,3 +52,26 @@ def get_html_from_file(path: str) -> ElementTree:
         text = f.read()
 
     return get_html(text)
+
+
+def get_dataframe_from_csv(path: str,
+                           prepend_text: Optional[str] = '',
+                           skip_lines: Optional[int] = 0,
+                           sep: Optional[str] = ',') -> pandas.DataFrame:
+    with open(path, 'r', encoding='utf-8') as f:
+        text = f.read()
+
+    # skip lines (headers)
+    text = '\n'.join(text.splitlines()[skip_lines:])
+    # add some other header before the lines
+    text = prepend_text + text
+
+    # read into a pandas dataframe
+    df = pandas.read_csv(StringIO(text),
+                         sep=sep,
+                         dtype=str,
+                         # skip NaN values
+                         na_values=[],
+                         keep_default_na=False)
+
+    return df
