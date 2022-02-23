@@ -156,7 +156,7 @@ class BSI(object):
             # collect Bausteinkategorie attributes
             kat_title = kat_link.text_content().strip()
             # skip (needed for BSI 2022)
-            if kat_title == 'Ähnliche Themen':
+            if self.VERSION == '2022' and kat_title == 'Ähnliche Themen':
                 continue
             kat_title_list = kat_title.split(': ')
             kat_name = kat_title_list[0]
@@ -251,23 +251,11 @@ class BSI(object):
                                 '//p[starts-with(text(), '
                                 '"Grundsätzlich zuständig")]'
                                 '/following::p/text()')[0].strip()
-                    # sometimes there is a different name for responsible
-                    else:
-                        rolle = content_html.xpath(
-                            '//p[starts-with(text(), '
-                            '"Bausteinverantwortlicher")]/text()')
-                        # do the same as above
-                        rolle = ' '.join(rolle[0].split(
-                            'Bausteinverantwortlicher')[1:]).strip()
-                        if len(rolle) == 0:
-                            rolle = content_html.xpath(
-                                '//p[starts-with(text(), '
-                                '"Bausteinverantwortlicher")]'
-                                '/following::p/text()')[0].strip()
 
                     # fix rolle BSI2022
-                    if rolle == 'OT-Betrieb':
-                        rolle = 'OT-Betrieb (Operational Technology, OT)'
+                    if self.VERSION == '2022':
+                        if rolle == 'OT-Betrieb':
+                            rolle = 'OT-Betrieb (Operational Technology, OT)'
 
                     if bau_cat not in self.baustein:
                         self.baustein[bau_cat] = {}
