@@ -155,7 +155,7 @@ class BSI(object):
                 '//div[contains(@class, "l-content-wrapper")]//h2'):
             # collect Bausteinkategorie attributes
             kat_title = kat_link.text_content().strip()
-            # skip (needed for BSI 2022)
+            # skip (needed for BSI 2022!?)
             if self.VERSION == '2022' and kat_title == 'Ähnliche Themen':
                 continue
             kat_title_list = kat_title.split(': ')
@@ -276,15 +276,6 @@ class BSI(object):
             sheet_name = 'INF.2_'
         if anf_name == 'ORP.1.A9':
             anf_name = 'ORP.1.A09'
-        # in BSI 2022, the Anforderung "APP.4.3.A24" is missing in KRT
-        if self.VERSION == '2022' and anf_name == 'APP.4.3.A24':
-            return {'G 0.14': 'CIA',
-                    'G 0.15': 'CIA',
-                    'G 0.22': 'CIA',
-                    'G 0.19': 'CIA',
-                    'G 0.23': 'CIA',
-                    'G 0.39': 'CIA',
-                    'G 0.46': 'CIA'}
         if anf_name == 'APP.4.4.A9':
             anf_name = 'APP.4.4.A09'
 
@@ -334,7 +325,7 @@ class BSI2022(BSI):
     KRT_URL = (
         DOWNLOAD_BASE +
         '/Kompendium/krt2022_Excel.xlsx'
-        '?__blob=publicationFile&v=3'
+        '?__blob=publicationFile&v=5'
     )
 
     def __init__(self, tmpdir: Optional[str] = None) -> None:
