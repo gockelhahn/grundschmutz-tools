@@ -12,6 +12,16 @@ Vor dem Ausführen müssen die Python-Abhängigkeiten installiert werden:
 
 Die Daten werden im "data" Ordner abgelegt.
 
+## Howto Docker Alternative
+
+Wenn man unabhängig vom Betriebssystem sein will, kann so vorgegangen werden:
+
+> docker build -t grundschmutz-tools:latest .
+
+> docker run --rm -v $(pwd)/data:/home/user/data grundschmutz-tools
+
+Der Teil  ```$(pwd)/data``` muss ggf. je nach Betriebssystem angepasst werden (siehe [docs.docker.com VOLUME](https://docs.docker.com/engine/reference/run/#volume-shared-filesystems)).
+
 ## Intention
 
 Nach dem Prinzip von [Open Data](https://de.wikipedia.org/wiki/Open_Data) sollten alle öffentlichen Daten möglichst [maschinenlesbar](https://en.wikipedia.org/wiki/Machine-readable_data) zur Verfügung gestellt werden, damit man sie filtern, verknüpfen oder anderweitig verarbeiten kann.

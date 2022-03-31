@@ -10,3 +10,7 @@ __pycache__
 
 # ignore temporary folder for downloads
 tmp
+
+# ignore data
+data/*
+!data/.gitkeep
