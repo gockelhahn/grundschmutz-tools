@@ -271,13 +271,14 @@ class BSI(object):
     def get_gefaehrdungen_by_anforderung(self, anf_name: str) -> dict:
         bau_name = anf_name.split('.A')[0]
         sheet_name = bau_name
-        # fix errors within KRT, overseen by BSI
-        if bau_name == 'INF.2':
-            sheet_name = 'INF.2_'
-        if anf_name == 'ORP.1.A9':
-            anf_name = 'ORP.1.A09'
-        if anf_name == 'APP.4.4.A9':
-            anf_name = 'APP.4.4.A09'
+        # fix errors within KRT, overseen by BSI (until 08.03.2022)
+        if self.VERSION != '2022':
+            if bau_name == 'INF.2':
+                sheet_name = 'INF.2_'
+            if anf_name == 'ORP.1.A9':
+                anf_name = 'ORP.1.A09'
+            if anf_name == 'APP.4.4.A9':
+                anf_name = 'APP.4.4.A09'
 
         sheet = self.krt[self.EXCEL_SHEET_NAME.format(sheet_name)]
         all_gefaehrdungen = [x for x in sheet.columns[3:].values.tolist()
@@ -325,7 +326,7 @@ class BSI2022(BSI):
     KRT_URL = (
         DOWNLOAD_BASE +
         '/Kompendium/krt2022_Excel.xlsx'
-        '?__blob=publicationFile&v=5'
+        '?__blob=publicationFile&v=6'
     )
 
     def __init__(self, tmpdir: Optional[str] = None) -> None:
