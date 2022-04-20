@@ -271,7 +271,7 @@ class BSI(object):
     def get_gefaehrdungen_by_anforderung(self, anf_name: str) -> dict:
         bau_name = anf_name.split('.A')[0]
         sheet_name = bau_name
-        # fix errors within KRT, overseen by BSI (until 08.03.2022)
+        # fix errors within KRT, overlooked by BSI (until 08.03.2022)
         if self.VERSION != '2022':
             if bau_name == 'INF.2':
                 sheet_name = 'INF.2_'
@@ -289,7 +289,7 @@ class BSI(object):
         checked = values[3:]
 
         gefaehrdungen_anf = {}
-        # fix errors within KRT, overseen by BSI
+        # fix errors within KRT, overlooked by BSI
         for i, value in enumerate(all_gefaehrdungen):
             newvalue = value
             newvalue = newvalue.replace('G0', 'G 0')

@@ -110,11 +110,11 @@ def create(bsi: BSI) -> None:
                     raise ValueError(
                         'Anforderungstyp missing: {}'.format(anf_label))
 
-                if 'B' in anf_typ.upper():
+                if 'B' == anf_typ.upper():
                     anf_typ = 'Basis'
-                if 'S' in anf_typ.upper():
+                elif 'S' == anf_typ.upper():
                     anf_typ = 'Standard'
-                if 'H' in anf_typ.upper():
+                elif 'H' == anf_typ.upper():
                     anf_typ = 'Hoch'
 
                 # set Bausteinverantwortlichen in Anforderung by default
