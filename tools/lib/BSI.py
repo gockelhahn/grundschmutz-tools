@@ -238,7 +238,7 @@ class BSI(object):
                             if self.VERSION == '2022':
                                 if anf_name == 'INF.12.A16':
                                     anforderungen[anf_number]['label'] = clean_gap(anf_label).replace(
-                                        'Haustechnik]', '[Haustechnik]')
+                                        ' Haustechnik]', ' [Haustechnik]')
 
                     # get responsible person
                     # yes we need the NBSP character here
