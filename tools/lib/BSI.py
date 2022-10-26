@@ -234,6 +234,12 @@ class BSI(object):
                                 'name': clean_gap(anf_name),
                                 'label': clean_gap(anf_label)}
 
+                            # fix label BSI2022
+                            if self.VERSION == '2022':
+                                if anf_name == 'INF.12.A16':
+                                    anforderungen[anf_number]['label'] = clean_gap(anf_label).replace(
+                                        'Haustechnik]', '[Haustechnik]')
+
                     # get responsible person
                     # yes we need the NBSP character here
                     rolle = content_html.xpath(
