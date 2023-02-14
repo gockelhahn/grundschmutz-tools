@@ -10,7 +10,7 @@ import shutil
 from jsonschema import validate
 
 from lib.common import get_from_json, save_json
-from lib.BSI import BSI, BSI2020, BSI2022
+from lib.BSI import BSI, BSIFactory
 
 
 # return ID if data (based on a key) is found in json file,
@@ -101,8 +101,30 @@ def create(bsi: BSI) -> None:
                                bsielements[kat][str(bauv)]['anforderungen']):
                 anf_label = bsielements[kat][str(bauv)][
                     'anforderungen'][str(anfv)]['label']
+
                 # examine label + type + reponsible (role)
-                found = re.search(r'(.*)[\s]\((.*)\)', anf_label)
+                # FIXME: in BSI 2023, different order of type / reposonsibility
+                anf_real_label = anf_label
+                # set Bausteinverantwortlichen in Anforderung by default
+                anf_rollen_ids = [bau_rolle_id]
+
+                # search for responsibility
+                ff = re.search(r'(.*)\s\[(.*)](.*)', anf_label)
+                if ff:
+                    # rebuild string without matching part
+                    anf_real_label = '{}{}'.format(ff.groups()[0],
+                                                   ff.groups()[2])
+                    anf_rollen = ff.groups()[1]
+                    # reset rollen
+                    anf_rollen_ids = []
+                    # negative lookahead, split on ',' but not inside brackets
+                    for entry in re.split(r',(?![^(]*\))', anf_rollen):
+                        rolle_data = {'name': entry.strip()}
+                        rolle_id = get_or_create(
+                            j_rolle, d_rolle, 'name', rolle_data)
+                        anf_rollen_ids.append(rolle_id)
+
+                found = re.search(r'(.*)\s\(([BSH])\)', anf_real_label)
                 if found:
                     anf_real_label = found.groups()[0]
                     anf_typ = found.groups()[1]
@@ -116,23 +138,6 @@ def create(bsi: BSI) -> None:
                     anf_typ = 'Standard'
                 elif 'H' == anf_typ.upper():
                     anf_typ = 'Hoch'
-
-                # set Bausteinverantwortlichen in Anforderung by default
-                anf_rollen_ids = [bau_rolle_id]
-
-                # search again for responsibility
-                ff = re.search(r'.*\[(.*)]', anf_real_label)
-                if ff:
-                    anf_real_label = anf_real_label.split(' [')[0]
-                    anf_rollen = ff.groups()[0]
-                    # reset rollen
-                    anf_rollen_ids = []
-                    # negative lookahead, split on ',' but not inside brackets
-                    for entry in re.split(r',(?![^(]*\))', anf_rollen):
-                        rolle_data = {'name': entry.strip()}
-                        rolle_id = get_or_create(
-                            j_rolle, d_rolle, 'name', rolle_data)
-                        anf_rollen_ids.append(rolle_id)
 
                 d_anforderung.append({
                     'id': len(d_anforderung),
@@ -198,12 +203,14 @@ def create(bsi: BSI) -> None:
 
 
 def main() -> None:
-    bsi2020 = BSI2020()
+    bsi2020 = BSIFactory.get_bsi_version(2020)
     create(bsi2020)
-    bsi2021 = BSI()
+    bsi2021 = BSIFactory.get_bsi_version(2021)
     create(bsi2021)
-    bsi2022 = BSI2022()
+    bsi2022 = BSIFactory.get_bsi_version(2022)
     create(bsi2022)
+    bsi2023 = BSIFactory.get_bsi_version(2023)
+    create(bsi2023)
 
 
 if __name__ == '__main__':

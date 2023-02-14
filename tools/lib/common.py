@@ -9,6 +9,7 @@ import requests
 
 
 def download_binary(url: str, dest: str) -> None:
+    print('Downloading: {}'.format(url))
     with requests.get(url, stream=True) as r:
         r.raise_for_status()
         with open(dest, 'wb') as f:

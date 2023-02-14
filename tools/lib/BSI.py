@@ -11,6 +11,19 @@ from .common import (
 )
 
 
+class BSIFactory(object):
+    @staticmethod
+    def get_bsi_version(year):
+        if year == 2020:
+            return BSI2020()
+        if year == 2021:
+            return BSI()
+        if year == 2022:
+            return BSI2022()
+        if year == 2023:
+            return BSI2023()
+
+
 class BSI(object):
     VERSION = '2021'
     BSI_DOMAIN = 'https://www.bsi.bund.de'
@@ -155,9 +168,10 @@ class BSI(object):
                 '//div[contains(@class, "l-content-wrapper")]//h2'):
             # collect Bausteinkategorie attributes
             kat_title = kat_link.text_content().strip()
-            # skip (needed for BSI 2022!?)
-            if self.VERSION == '2022' and kat_title == 'Ähnliche Themen':
-                continue
+            # skip (needed for BSI 2022/2023)
+            if self.VERSION in ['2022', '2023']:
+                if kat_title == 'Ähnliche Themen':
+                    continue
             kat_title_list = kat_title.split(': ')
             kat_name = kat_title_list[0]
             kat_label = kat_title_list[1]
@@ -200,7 +214,7 @@ class BSI(object):
 
         # loop through all Baustein PDFs
         for path in glob.glob(os.path.join(self.baustein_dir, '*.pdf')):
-            file_prefix = path.split('.pdf')[0]
+            file_prefix = os.path.splitext(path)[0]
             # table of content
             toc_path = '{}s.html'.format(file_prefix)
             # content
@@ -226,6 +240,10 @@ class BSI(object):
                             # collect Anforderung attributes
                             anf_title_split = anf_link.text_content().split()
                             anf_name = anf_title_split[0]
+                            # FIXME: typo in 2023
+                            if self.VERSION == '2023':
+                                if anf_name == 'OPS.2.3A22':
+                                    anf_name = 'OPS.2.3.A22'
                             anf_number = anf_name.split(
                                 '{}.A'.format(bau_name))[1]
                             anf_label = ' '.join(anf_title_split[1:])
@@ -235,10 +253,11 @@ class BSI(object):
                                 'label': clean_gap(anf_label)}
 
                             # fix label BSI2022
-                            if self.VERSION == '2022':
-                                if anf_name == 'INF.12.A16':
-                                    anforderungen[anf_number]['label'] = clean_gap(anf_label).replace(
-                                        ' Haustechnik]', ' [Haustechnik]')
+                            if (self.VERSION == '2022' and
+                                    anf_name == 'INF.12.A16'):
+                                anforderungen[anf_number]['label'] = clean_gap(
+                                    anf_label).replace(' Haustechnik]',
+                                                       ' [Haustechnik]')
 
                     # get responsible person
                     # yes we need the NBSP character here
@@ -259,9 +278,14 @@ class BSI(object):
                                 '/following::p/text()')[0].strip()
 
                     # fix rolle BSI2022
-                    if self.VERSION == '2022':
+                    if self.VERSION in ['2022', '2023']:
                         if rolle == 'OT-Betrieb':
                             rolle = 'OT-Betrieb (Operational Technology, OT)'
+
+                    # fix rolle in BSI 2023
+                    if self.VERSION in ['2023']:
+                        if rolle == 'Informationssicherheitsbeauftragte':
+                            rolle = 'Informationssicherheitsbeauftragte (ISB)'
 
                     if bau_cat not in self.baustein:
                         self.baustein[bau_cat] = {}
@@ -278,7 +302,7 @@ class BSI(object):
         bau_name = anf_name.split('.A')[0]
         sheet_name = bau_name
         # fix errors within KRT, overlooked by BSI (until 08.03.2022)
-        if self.VERSION != '2022':
+        if self.VERSION not in ['2022', '2023']:
             if bau_name == 'INF.2':
                 sheet_name = 'INF.2_'
             if anf_name == 'ORP.1.A9':
@@ -298,6 +322,12 @@ class BSI(object):
         # fix errors within KRT, overlooked by BSI
         for i, value in enumerate(all_gefaehrdungen):
             newvalue = value
+            # FIXME: error in BSI 2023
+            if self.VERSION in ['2023']:
+                if value == 'G 0.0':
+                    newvalue = 'G 0.3'
+                if value == 'G.0.14':
+                    newvalue = 'G 0.14'
             newvalue = newvalue.replace('G0', 'G 0')
             newvalue = newvalue.replace('G.0', 'G 0.')
             newvalue = newvalue.replace('G 0.0', 'G 0.')
@@ -326,13 +356,13 @@ class BSI2022(BSI):
         '/DE/Themen/Unternehmen-und-Organisationen'
         '/Standards-und-Zertifizierung/IT-Grundschutz'
         '/IT-Grundschutz-Kompendium/IT-Grundschutz-Bausteine'
-        '/Bausteine_Download_Edition_node.html'
+        '/2022/Bausteine_Download_Edition.html'
     )
     # Kreuzreferenztabelle (xlsx)
     KRT_URL = (
         DOWNLOAD_BASE +
         '/Kompendium/krt2022_Excel.xlsx'
-        '?__blob=publicationFile&v=6'
+        '?__blob=publicationFile&v=7'
     )
 
     def __init__(self, tmpdir: Optional[str] = None) -> None:
@@ -431,3 +461,38 @@ class BSI2020(BSI):
                 gefaehrdungen_anf[fixed_gef] = anforderung_values[0][1]
 
         return gefaehrdungen_anf
+
+
+class BSI2023(BSI):
+    VERSION = '2023'
+    BSI_DOMAIN = 'https://www.bsi.bund.de'
+    DOWNLOAD_BASE = (
+            BSI_DOMAIN +
+            '/SharedDocs/Downloads/DE/BSI/Grundschutz'
+    )
+    # ZIP file with separate PDFs (one PDF per Baustein)
+    KOMPENDIUM_URL = (
+            DOWNLOAD_BASE +
+            '/IT-GS-Kompendium_Einzel_PDFs_2023/Zip_Datei_Edition_2023.zip'
+            '?__blob=publicationFile&v=3'
+    )
+    # overview URL with Bausteinkategorien
+    OVERVIEW_URL = (
+            BSI_DOMAIN +
+            '/DE/Themen/Unternehmen-und-Organisationen'
+            '/Standards-und-Zertifizierung/IT-Grundschutz'
+            '/IT-Grundschutz-Kompendium/IT-Grundschutz-Bausteine'
+            '/Bausteine_Download_Edition_node.html'
+    )
+    # Kreuzreferenztabelle (xlsx)
+    KRT_URL = (
+            DOWNLOAD_BASE +
+            '/Kompendium/krt2023_Excel.xlsx'
+            '?__blob=publicationFile&v=7'
+    )
+
+    def __init__(self, tmpdir: Optional[str] = None) -> None:
+        super().__init__(tmpdir)
+
+        # folder of bausteine
+        self.baustein_dir = os.path.join(self.baustein_dir, 'Einzeln_PDF')
