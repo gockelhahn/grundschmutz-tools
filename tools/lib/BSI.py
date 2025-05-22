@@ -34,7 +34,7 @@ class BSI(object):
     # ZIP file with separate PDFs (one PDF per Baustein)
     KOMPENDIUM_URL = (
         DOWNLOAD_BASE +
-        '/Kompendium_Einzel_PDFs_2021/Zip_Datei_Edition_2021.zip'
+        '/IT-GS-Kompendium_Einzel_PDFs_2021/Zip_Datei_Edition_2021.zip'
         '?__blob=publicationFile&v=6'
     )
     # overview URL with Bausteinkategorien
@@ -48,13 +48,13 @@ class BSI(object):
     # URL for "Elementare Gefährdungen"
     GEFAEHRDUNGEN_URL = (
         DOWNLOAD_BASE +
-        '/Kompendium/Elementare_Gefaehrdungen.pdf'
+        '/IT-GS-Kompendium/Elementare_Gefaehrdungen.pdf'
         '?__blob=publicationFile&v=4'
     )
     # Kreuzreferenztabelle (xlsx)
     KRT_URL = (
         DOWNLOAD_BASE +
-        '/Kompendium/krt2021_Excel.xlsx'
+        '/IT-GS-Kompendium/krt2021_Excel.xlsx'
         '?__blob=publicationFile&v=3'
     )
     # excel sheet name template
@@ -361,7 +361,7 @@ class BSI2022(BSI):
     # Kreuzreferenztabelle (xlsx)
     KRT_URL = (
         DOWNLOAD_BASE +
-        '/Kompendium/krt2022_Excel.xlsx'
+        '/IT-GS-Kompendium/krt2022_Excel.xlsx'
         '?__blob=publicationFile&v=7'
     )
 
@@ -391,7 +391,7 @@ class BSI2020(BSI):
     # Kreuzreferenztabelle (xlsx)
     KRT_URL = (
         DOWNLOAD_BASE +
-        '/Kompendium/krt2020.csv'
+        '/IT-GS-Kompendium/krt2020.csv'
         '?__blob=publicationFile&v=1'
     )
 
@@ -487,7 +487,7 @@ class BSI2023(BSI):
     # Kreuzreferenztabelle (xlsx)
     KRT_URL = (
             DOWNLOAD_BASE +
-            '/Kompendium/krt2023_Excel.xlsx'
+            '/IT-GS-Kompendium/krt2023_Excel.xlsx'
             '?__blob=publicationFile&v=7'
     )
 
