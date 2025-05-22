@@ -55,7 +55,7 @@ class BSI(object):
     KRT_URL = (
         DOWNLOAD_BASE +
         '/IT-GS-Kompendium/krt2021_Excel.xlsx'
-        '?__blob=publicationFile&v=3'
+        '?__blob=publicationFile&v=4'
     )
     # excel sheet name template
     EXCEL_SHEET_NAME = 'KRT_{}.xlsx'
@@ -392,7 +392,7 @@ class BSI2020(BSI):
     KRT_URL = (
         DOWNLOAD_BASE +
         '/IT-GS-Kompendium/krt2020.csv'
-        '?__blob=publicationFile&v=1'
+        '?__blob=publicationFile&v=3'
     )
 
     def __init__(self, tmpdir: Optional[str] = None) -> None:
@@ -474,7 +474,7 @@ class BSI2023(BSI):
     KOMPENDIUM_URL = (
             DOWNLOAD_BASE +
             '/IT-GS-Kompendium_Einzel_PDFs_2023/Zip_Datei_Edition_2023.zip'
-            '?__blob=publicationFile&v=3'
+            '?__blob=publicationFile&v=4'
     )
     # overview URL with Bausteinkategorien
     OVERVIEW_URL = (
@@ -488,7 +488,7 @@ class BSI2023(BSI):
     KRT_URL = (
             DOWNLOAD_BASE +
             '/IT-GS-Kompendium/krt2023_Excel.xlsx'
-            '?__blob=publicationFile&v=7'
+            '?__blob=publicationFile&v=8'
     )
 
     def __init__(self, tmpdir: Optional[str] = None) -> None:
